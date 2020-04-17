@@ -1,4 +1,4 @@
-function [cosinorStruct, numdays]=mainCosinorOctave(timeInHours,actigraphy,sleep)
+function [cosinorStruct, numdays]=mainCosinorOctave(timeInHours,actigraphy,sleep,imgnum)
 % performs cosinor analysis
 % modified 12/23/15: I changed the criteria for discarding a day
 % discard if less than 10 valid hours of wakefulness time
@@ -44,7 +44,8 @@ numdays=numdays-disc;
 if numdays>0
 yint_new=yint(discard==0);
 tint_new=tint(discard==0);
-figure
+fig_num=num2str(round(rand()*1000));
+eval(['fig',fig_num, '= figure();']);
 ax(1)=subplot(211);
 
 % stitch days together for following analysis
@@ -78,6 +79,13 @@ plot(tint_new, cosinorStruct.f,'r',...
 
 legend('Actigraphy','Cosinor model')
 set(gca,'fontsize',18)
+eval(['frame = getframe(fig',fig_num, ');']);
+img = frame2im(frame);
+namelist=dir('*.png');
+imgnum=length(namelist)+1;
+image_name=num2str(imgnum);
+imwrite(img,[image_name,'.png']);
+  
 
 else
 cosinorStruct.Mesor=NaN;

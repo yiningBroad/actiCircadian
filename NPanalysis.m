@@ -57,7 +57,7 @@ for j=1:length(datafiles)
     display(name);
     names{j}=name;
     [~,~,tab]=xlsread([PathName '\' xlsxFn]);   
-    
+    tab(find(cellfun(@(x) any(isnan(x)),tab)))={'0'};
         % there is an header in the Excel file: if it changes size, change this value
     numlineshea=1;
     tab(1:numlineshea,:)=[];
@@ -98,12 +98,25 @@ for j=1:length(datafiles)
     catch
     date=datevec(tab(:,2));
     end
-    try
-    time=datevec(cell2mat(tab(:,3)));
-    catch
-    date=datevec(tab(:,3));
+%     try
+    time_raw=tab(:,3);
+    for i =1:length(time_raw)
+        str=time_raw{i};
+        if length(str(1:end-3))~=8
+            str=['0',str];
+        end
+        if isequal(str(end-1:end),'PM') & ~isequal(str(1:2),'12')
+            str(1:2)=num2str(str2double(str(1:2))+12);
+        elseif isequal(str(end-1:end),'AM') & isequal(str(1:2),'12')
+            str(1:2)=num2str(str2double(str(1:2))-12);
+        end
+        time_raw(i)={str(1:end-3)};
     end
-    actigraphy = cell2mat(tab(:,4)); % I am using axis 1
+    time=datevec(cell2mat(time_raw));
+%     catch
+%     date=datevec(tab(:,3));
+%     end
+    actigraphy = str2double(tab(:,4)); % I am using axis 1
     sleepvec=cell2mat(tab(:,10));    
     weekdayvec=tab(:,12);
    
@@ -183,10 +196,10 @@ for j=1:length(datafiles)
     timeInHours=d*24+time(:,1)+time(:,2)/60+time(:,3)/3600;
     timeInMinutes=timeInHours*60;
     % check that it makes sense
-    if any(diff(round(timeInMinutes*1000))~=1000)
-    error('Something wrong in the time/sampling')
-    break
-    end
+%     if any(diff(round(timeInMinutes*1000))~=500)
+%     error('Something wrong in the time/sampling')
+%     break
+%     end
     
     %figure('Name', name, 'Position',...
     %[0.05*scrsz(3) 0.05*scrsz(4) 0.7*scrsz(3) 0.7*scrsz(4)],...

@@ -44,9 +44,9 @@ for j=1:length(datafiles)
     display(name);
     names{j}=name;
     [~,~,tab]=xlsread([PathName '\' xlsxFn]);
-    
+        tab(find(cellfun(@(x) any(isnan(x)),tab)))={'0'};
     % there is an header in the Excel file: if it changes size, change this value
-    numlineshea=4;
+    numlineshea=1;
     tab(1:numlineshea,:)=[];
     
     % wear column could be 1/0 or w/nw
@@ -85,12 +85,22 @@ for j=1:length(datafiles)
     catch
         date=datevec(tab(:,2));
     end
-    try
-        time=datevec(cell2mat(tab(:,3)));
-    catch
-        date=datevec(tab(:,3));
+     time_raw=tab(:,3);
+    for i =1:length(time_raw)
+        str=time_raw{i};
+        if length(str(1:end-3))~=8
+            str=['0',str];
+        end
+        if isequal(str(end-1:end),'PM') & ~isequal(str(1:2),'12')
+            str(1:2)=num2str(str2double(str(1:2))+12);
+        elseif isequal(str(end-1:end),'AM') & isequal(str(1:2),'12')
+            str(1:2)=num2str(str2double(str(1:2))-12);
+        end
+        time_raw(i)={str(1:end-3)};
     end
-    actigraphy = cell2mat(tab(:,4)); % I am using axis 1
+    time=datevec(cell2mat(time_raw));
+    
+   actigraphy = str2double(tab(:,4)); % I am using axis 1
     sleepvec=cell2mat(tab(:,10));
     weekdayvec=tab(:,13);
     
@@ -172,10 +182,10 @@ for j=1:length(datafiles)
     timeInHours=d*24+time(:,1)+time(:,2)/60+time(:,3)/3600;
     timeInMinutes=timeInHours*60;
     % check that it makes sense
-    if any(diff(round(timeInMinutes*1000))~=1000)
+    if any(diff(round(timeInMinutes*1000))~=500)
         
         % check for daylight saving time: are we missing one hour
-        err=find(diff(round(timeInMinutes*1000))~=1000);
+        err=find(diff(round(timeInMinutes*1000))~=500);
         if numel(err)==1 & time(err+1,1)-time(err,1)==1
             display(['Possibly Daylight Saving Time between ' num2str(time(err,1)) ' and ' ...
                 num2str(time(err+1,1)) ' on ' num2str(date(err,2)) '/' num2str(date(err,3))])
